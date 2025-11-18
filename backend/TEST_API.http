@@ -1,0 +1,459 @@
+### ViWoApp Backend API Testing
+### Use this file with REST Client extension in VS Code or Thunder Client
+
+@baseUrl = http://localhost:3000/api/v1
+@token = YOUR_TOKEN_HERE
+
+### Health Check
+GET {{baseUrl}}/health
+
+### ================================
+### AUTHENTICATION
+### ================================
+
+### Register New User
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "demo@example.com",
+  "username": "demouser",
+  "password": "Test123!",
+  "displayName": "Demo User"
+}
+
+### Login (save the accessToken!)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "emailOrUsername": "bob",
+  "password": "Test123!"
+}
+
+### Get Current User
+GET {{baseUrl}}/auth/me
+Authorization: Bearer {{token}}
+
+### Refresh Token
+POST {{baseUrl}}/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "YOUR_REFRESH_TOKEN"
+}
+
+### ================================
+### USERS
+### ================================
+
+### Get My Profile
+GET {{baseUrl}}/users/me
+Authorization: Bearer {{token}}
+
+### Get User by ID
+GET {{baseUrl}}/users/USER_ID_HERE
+
+### Search Users
+GET {{baseUrl}}/users/search?q=bob&page=1&limit=10
+
+### Update Profile
+PUT {{baseUrl}}/users/USER_ID_HERE
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "displayName": "New Display Name",
+  "bio": "Updated bio"
+}
+
+### Follow User
+POST {{baseUrl}}/users/USER_ID_HERE/follow
+Authorization: Bearer {{token}}
+
+### Unfollow User
+DELETE {{baseUrl}}/users/USER_ID_HERE/follow
+Authorization: Bearer {{token}}
+
+### ================================
+### POSTS
+### ================================
+
+### Get Feed
+GET {{baseUrl}}/posts?page=1&limit=20
+
+### Create Post
+POST {{baseUrl}}/posts
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "content": "My first post on ViWoApp! 🚀"
+}
+
+### Get Single Post
+GET {{baseUrl}}/posts/POST_ID_HERE
+
+### Like Post (Earn 0.5 VCN!)
+POST {{baseUrl}}/posts/POST_ID_HERE/like
+Authorization: Bearer {{token}}
+
+### Unlike Post
+DELETE {{baseUrl}}/posts/POST_ID_HERE/like
+Authorization: Bearer {{token}}
+
+### Share Post (Earn 1.0 VCN!)
+POST {{baseUrl}}/posts/POST_ID_HERE/share
+Authorization: Bearer {{token}}
+
+### Repost (Earn 1.2 VCN!)
+POST {{baseUrl}}/posts/POST_ID_HERE/repost
+Authorization: Bearer {{token}}
+
+### ================================
+### COMMENTS
+### ================================
+
+### Get Post Comments
+GET {{baseUrl}}/posts/POST_ID_HERE/comments?page=1&limit=20
+
+### Create Comment (Earn 0.8 VCN!)
+POST {{baseUrl}}/posts/POST_ID_HERE/comments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "content": "Great post! Love the VCoin system!"
+}
+
+### Create Reply (nested comment)
+POST {{baseUrl}}/posts/POST_ID_HERE/comments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "content": "I agree with you!",
+  "parentId": "COMMENT_ID_HERE"
+}
+
+### ================================
+### VCOIN
+### ================================
+
+### Get Balance
+GET {{baseUrl}}/vcoin/balance
+Authorization: Bearer {{token}}
+
+### Get Transaction History
+GET {{baseUrl}}/vcoin/transactions?page=1&limit=20
+Authorization: Bearer {{token}}
+
+### Send VCoin (5% fee)
+POST {{baseUrl}}/vcoin/send
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "recipientId": "USER_ID_HERE",
+  "amount": 10,
+  "note": "Here's some VCoin!"
+}
+
+### Get Supply Stats
+GET {{baseUrl}}/vcoin/stats
+
+### ================================
+### REWARDS
+### ================================
+
+### Get Reward History
+GET {{baseUrl}}/rewards/history?page=1&limit=20
+Authorization: Bearer {{token}}
+
+### Get Leaderboard (Daily)
+GET {{baseUrl}}/rewards/leaderboard?period=daily&limit=10
+
+### Get Leaderboard (Weekly)
+GET {{baseUrl}}/rewards/leaderboard?period=weekly&limit=10
+
+### Get Leaderboard (Monthly)
+GET {{baseUrl}}/rewards/leaderboard?period=monthly&limit=10
+
+### Manually Trigger Daily Distribution
+POST {{baseUrl}}/rewards/distribute
+Authorization: Bearer {{token}}
+
+### ================================
+### QUALITY & REPUTATION
+### ================================
+
+### Get Post Quality Score
+GET {{baseUrl}}/quality/post/POST_ID_HERE
+
+### Update All Quality Scores
+POST {{baseUrl}}/quality/update-all
+Authorization: Bearer {{token}}
+
+### Get User Reputation
+GET {{baseUrl}}/reputation/user/USER_ID_HERE
+
+### Calculate User Reputation
+POST {{baseUrl}}/reputation/calculate/USER_ID_HERE
+Authorization: Bearer {{token}}
+
+### Update All Reputations
+POST {{baseUrl}}/reputation/update-all
+Authorization: Bearer {{token}}
+
+### ================================
+### ANTI-BOT
+### ================================
+
+### Check User for Bot Activity
+POST {{baseUrl}}/anti-bot/check/USER_ID_HERE
+Authorization: Bearer {{token}}
+
+### Get User Bot Flags
+GET {{baseUrl}}/anti-bot/flags/USER_ID_HERE
+Authorization: Bearer {{token}}
+
+### Get System Bot Stats
+GET {{baseUrl}}/anti-bot/stats
+Authorization: Bearer {{token}}
+
+### Resolve Bot Flag
+POST {{baseUrl}}/anti-bot/flags/FLAG_ID_HERE/resolve
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "resolution": "False positive - user cleared"
+}
+
+### ================================
+### STAKING
+### ================================
+
+### Get Staking Requirements
+GET {{baseUrl}}/staking/requirements
+
+### Get My Stakes
+GET {{baseUrl}}/staking/my-stakes
+Authorization: Bearer {{token}}
+
+### Stake VCoin
+POST {{baseUrl}}/staking/stake
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "amount": 1000,
+  "featureType": "CONTENT_CREATOR_PRO",
+  "lockPeriodDays": 90
+}
+
+### Unstake (after unlock date)
+POST {{baseUrl}}/staking/unstake/STAKE_ID_HERE
+Authorization: Bearer {{token}}
+
+### Process All Unlocks (admin)
+POST {{baseUrl}}/staking/process-unlocks
+Authorization: Bearer {{token}}
+
+### ================================
+### VERIFICATION
+### ================================
+
+### Get All Tiers
+GET {{baseUrl}}/verification/tiers
+
+### Get My Verification Status
+GET {{baseUrl}}/verification/status
+Authorization: Bearer {{token}}
+
+### Upgrade Tier
+POST {{baseUrl}}/verification/upgrade
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "tier": "VERIFIED"
+}
+
+### Apply for Verification
+POST {{baseUrl}}/verification/apply
+Authorization: Bearer {{token}}
+
+### ================================
+### BUYBACK
+### ================================
+
+### Get Buyback History
+GET {{baseUrl}}/buyback/history?page=1&limit=10
+
+### Get Buyback Stats
+GET {{baseUrl}}/buyback/stats
+
+### Get Module Revenues
+GET {{baseUrl}}/buyback/module-revenues
+
+### Execute Buyback (admin)
+POST {{baseUrl}}/buyback/execute
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "monthlyProfit": 10000
+}
+
+### Track Module Revenue (admin)
+POST {{baseUrl}}/buyback/track-revenue
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "moduleName": "IDENTITY",
+  "month": "2025-01-01",
+  "revenue": 5000,
+  "costs": 1000
+}
+
+### ================================
+### FILE UPLOAD
+### ================================
+
+### Upload Image
+POST {{baseUrl}}/upload/image
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="image.jpg"
+Content-Type: image/jpeg
+
+< ./path/to/image.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### Upload Video
+POST {{baseUrl}}/upload/video
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="video.mp4"
+Content-Type: video/mp4
+
+< ./path/to/video.mp4
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### ================================
+### SHORTS
+### ================================
+
+### Get Shorts Feed
+GET {{baseUrl}}/shorts?page=1&limit=10
+
+### Create Short
+POST {{baseUrl}}/shorts
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "My First Short!",
+  "videoUrl": "http://localhost:3000/uploads/video123.mp4",
+  "thumbnailUrl": "http://localhost:3000/uploads/thumb123.jpg",
+  "duration": 30
+}
+
+### Get Single Short
+GET {{baseUrl}}/shorts/SHORT_ID_HERE
+
+### Like Short
+POST {{baseUrl}}/shorts/SHORT_ID_HERE/like
+Authorization: Bearer {{token}}
+
+### Get User's Shorts
+GET {{baseUrl}}/shorts/user/USER_ID_HERE?page=1
+
+### Delete Short
+DELETE {{baseUrl}}/shorts/SHORT_ID_HERE
+Authorization: Bearer {{token}}
+
+### ================================
+### MESSAGING (REST Endpoints)
+### ================================
+
+### Get My Message Threads
+GET {{baseUrl}}/messages/threads
+Authorization: Bearer {{token}}
+
+### Create New Thread
+POST {{baseUrl}}/messages/threads
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "participantIds": ["USER_ID_HERE"]
+}
+
+### Get Thread Messages
+GET {{baseUrl}}/messages/threads/THREAD_ID_HERE?page=1
+Authorization: Bearer {{token}}
+
+### ================================
+### PUSH NOTIFICATIONS
+### ================================
+
+### Register FCM Token
+POST {{baseUrl}}/notifications/register-token
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "token": "YOUR_FCM_TOKEN_HERE",
+  "deviceType": "android"
+}
+
+### Remove FCM Token
+DELETE {{baseUrl}}/notifications/remove-token
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "token": "YOUR_FCM_TOKEN_HERE"
+}
+
+### ================================
+### WEBSOCKET EVENTS (Socket.io)
+### ================================
+
+# Connect to WebSocket: ws://localhost:3000/messages
+# Include auth token in handshake: { auth: { token: "YOUR_TOKEN" }, query: { userId: "YOUR_USER_ID" } }
+
+# Client → Server Events:
+# - send_message: { threadId, content, mediaUrl? }
+# - join_thread: { threadId }
+# - leave_thread: { threadId }
+# - typing_start: { threadId }
+# - typing_stop: { threadId }
+# - mark_read: { messageId }
+
+# Server → Client Events:
+# - new_message: { message object }
+# - user_typing: { userId }
+# - user_stopped_typing: { userId }
+
+### ================================
+### END OF API TESTS
+### ================================
+
+# Test with Thunder Client or REST Client extension
+# Replace {{token}} with your actual JWT token after login
+# Replace ID placeholders with actual IDs from responses
+
+# NOTES:
+# - File uploads require multipart/form-data, use Postman or Thunder Client
+# - WebSocket messaging requires Socket.io client library
+# - Push notifications require Firebase setup (optional for MVP)
+# - Rate limiting: Login (5/min), Register (3/min), Others (100/60s)
+

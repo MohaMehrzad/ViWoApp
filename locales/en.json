@@ -1,0 +1,112 @@
+{
+  "app": {
+    "name": "ViWoApp"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "retry": "Try Again",
+    "cancel": "Cancel",
+    "close": "Close",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "share": "Share",
+    "report": "Report",
+    "comingSoon": "Coming Soon"
+  },
+  "feed": {
+    "title": "Feed",
+    "createPost": "Create Post",
+    "noPosts": "No Posts Yet",
+    "noPostsMessage": "Be the first to share something with the community!",
+    "loadingPosts": "Loading posts...",
+    "errorLoading": "Unable to load posts. Please check your connection and try again.",
+    "loadingMore": "Loading more..."
+  },
+  "shorts": {
+    "title": "Shorts",
+    "videoLoading": "Loading video...",
+    "videoError": "Video failed to load",
+    "errorLoading": "Unable to load shorts. Please try again."
+  },
+  "defi": {
+    "title": "DeFi",
+    "totalBalance": "Total Balance",
+    "send": "Send",
+    "receive": "Receive",
+    "stake": "Stake",
+    "howToEarn": "How to Earn VCoin",
+    "viewRewards": "View Rewards",
+    "feesRisks": "Fees & Risks"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "noNotifications": "No Notifications",
+    "noNotificationsMessage": "You're all caught up! Check back later for updates.",
+    "errorLoading": "Unable to load notifications. Please try again."
+  },
+  "messages": {
+    "title": "Messages",
+    "noMessages": "No Messages Yet",
+    "noMessagesMessage": "Start a conversation with someone!",
+    "errorLoading": "Unable to load messages. Please try again."
+  },
+  "post": {
+    "like": "Like",
+    "unlike": "Unlike",
+    "comment": "Comment",
+    "comments": "Comments",
+    "repost": "Repost",
+    "unrepost": "Unrepost",
+    "share": "Share",
+    "seeMore": "See more",
+    "seeLess": "See less",
+    "editPost": "Edit Post",
+    "deletePost": "Delete Post",
+    "reportPost": "Report Post",
+    "shareVia": "Share via..."
+  },
+  "vcoin": {
+    "balance": "VCoin balance",
+    "earned": "You earned {{amount}} VCN!",
+    "viewDeFi": "Double tap to view DeFi screen"
+  },
+  "time": {
+    "now": "now",
+    "minutes": "{{count}}m",
+    "hours": "{{count}}h",
+    "days": "{{count}}d",
+    "weeks": "{{count}}w",
+    "months": "{{count}}mo"
+  },
+  "accessibility": {
+    "likes": "{{count}} likes",
+    "comments": "{{count}} comments",
+    "reposts": "{{count}} reposts",
+    "shares": "{{count}} shares",
+    "postOptions": "Post options",
+    "createPost": "Create new post",
+    "closeModal": "Close modal",
+    "muteUnmute": "Mute or unmute"
+  },
+  "errors": {
+    "networkError": "Network Error",
+    "networkErrorMessage": "Unable to connect to the server. Please check your internet connection and try again.",
+    "genericError": "Something Went Wrong",
+    "genericErrorMessage": "An unexpected error occurred. Please try again later.",
+    "notFound": "Not Found",
+    "notFoundMessage": "The content you're looking for doesn't exist or has been removed.",
+    "imageLoadError": "Image failed to load",
+    "support": "If this problem persists, please contact support@viwoapp.com"
+  },
+  "modals": {
+    "comingSoonTitle": "Coming Soon",
+    "comingSoonMessage": "We're working hard to bring you this feature. Stay tuned for updates!",
+    "gotIt": "Got It",
+    "iUnderstand": "I Understand",
+    "feesRisksTitle": "Fees & Risks",
+    "feesRisksDescription": "Understanding fees and risks is essential for safe participation in the ViWoApp ecosystem. Review each section below for detailed information."
+  }
+}
+

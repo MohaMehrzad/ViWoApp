@@ -1,0 +1,289 @@
+0) Purpose
+
+A precise, implementation‑ready UI/UX specification for ViWoApp (Expo: iOS, Android, Web) that Cursor can follow to scaffold screens, components, theming, and interactions. The app blends a social feed (X‑like), short vertical videos, a DeFi hub, notifications, and messages. VCoin is the in‑app currency; users earn it for post engagement (like/share/repost). A persistent VCoin balance must be visible at the top‑right of the header across all tabs.
+
+1) Information Architecture
+
+Primary navigation (bottom tabs):
+
+Feed (default) – timeline of posts (text + image/video/audio). Actions: Like, Share, Repost, Comment, Create.
+
+Shorts – vertical, full‑bleed video feed with swipe up/down paging; inline actions.
+
+DeFi – VCoin wallet overview and actions (Send, Receive, Stake). Transparency surfaces for fees/risks.
+
+Notifications – activity (follows, mentions, rewards, system alerts).
+
+Messages – 1:1 and group threads.
+
+Global header:
+
+Title: “ViWoApp” (centered on iOS; left‑aligned on Android/Web).
+
+Right: VCoin Badge (VCN icon + numeric balance) → tap opens Wallet/DeFi.
+
+Left: Optional avatar (opens Profile & Settings) in later phases.
+
+Secondary navigation:
+
+DeFi action sheets/modals; composer modal for new post; filter/sort menus on Feed.
+
+Deep links: viwo://feed, viwo://shorts, viwo://defi, viwo://notifications, viwo://messages, viwo://wallet.
+
+2) Design System
+
+2.1 Tokens (light/dark aware)
+
+Color
+
+Background: #0B0F14 (dark default). Light mode: #F7FAFF.
+
+Text Primary: dark #E6EEF8; light #0B0F14.
+
+Text Secondary: dark #9FB0C3; light #3B4B5C.
+
+Accent (interactive): #4DD0E1.
+
+Success: #49E79A; Warning: #FFC857; Danger: #FF6B6B.
+
+Glass Fill (overlay): rgba(255,255,255,0.06) (dark), rgba(255,255,255,0.4) (light).
+
+Hairline Border: rgba(255,255,255,0.12) (dark), rgba(0,0,0,0.08) (light).
+
+Spacing (dp): 6, 10, 16, 24, 32 (xs, sm, md, lg, xl).
+
+Radius (dp): 10, 16, 24, 28 (sm, md, lg, xl). Use 28 for major cards (“Liquid Glass”).
+
+Typography
+
+iOS: SF Pro; Android/Web: Inter system stack fallback.
+
+Scale (dp): 32/H1, 24/H2, 20/H3, 17/Body, 15/Body‑2, 13/Caption.
+
+Line heights: H1 38, H2 30, H3 26, Body 22, Body‑2 20, Caption 16.
+
+Elevation/Shadow (subtle, avoid heavy drop shadows on glass):
+
+Soft: radius 12, opacity 0.25 (platform‑native shadow/elevation 6).
+
+Motion
+
+Durations: 150ms (micro), 220ms (default), 350ms (modal), 600ms (complex).
+
+Easing: iOS‑like cubic‑bezier(0.22, 0.61, 0.36, 1) for enter; (0.4, 0, 0.2, 1) for material‑like harmony on Android.
+
+Springs (tap feedback): mass 1, stiffness 400, damping 24.
+
+Reduced motion: disable parallax/large blurs; prefer fades.
+
+2.2 Liquid Glass (Apple‑inspired) – exact visual recipe
+
+Goal: frosted, translucent surfaces that feel layered over dynamic backdrops, with crisp edges, vibrancy, and readable content.
+
+Core layers (from back to front):
+
+Background content (imagery/video/gradient).
+
+Blur & saturation layer (simulated vibrancy):
+
+iOS (UIKit analogy): UIBlurEffectStyle.systemUltraThinMaterial / materialDark.
+
+Expo/React Native implementation:
+
+expo-blur BlurView intensity: 28 (default); ramp to 36 on image‑heavy backdrops; drop to 20 on low‑end.
+
+tint: "dark" in dark mode, "light" in light mode.
+
+Apply a 1.08× saturation to the underlying scene (pseudo): when background is colorful, boost perceived vibrancy of foreground icons/text. In RN, approximate via a translucent gradient (see #Tech note below).
+
+Glass fill overlay (to control luminance & readability):
+
+Dark: rgba(255,255,255,0.06); Light: rgba(255,255,255,0.40).
+
+Optional vertical subtle gradient: top +0.02 alpha vs bottom to add depth.
+
+Hairline border (inner/outer mix for crispness):
+
+1px border: dark rgba(255,255,255,0.12), light rgba(0,0,0,0.08).
+
+Add a 1px inner highlight on the top edge: linear‑gradient to simulate bezel catch‑light.
+
+Shape: 28dp corner radius (xl), no square corners on cards; maintain consistent rounding across glass surfaces.
+
+Shadow: very soft ambient; avoid hard shadows (glass should sit close to content).
+
+Noise/Dither (optional): a faint, tiling noise texture at 1–2% opacity can help break banding on gradients.
+
+Readability rules:
+
+Minimum contrast 4.5:1 for body text over glass; for small text/icons use 7:1 when feasible.
+
+Add auto‑backdrop guard: if background luminance under card is high (e.g., white), raise glass fill alpha by +0.02; if very dark, reduce by −0.02 to avoid over‑darkening.
+
+Performance fallbacks:
+
+Devices failing perf budget (see §8) switch to opaque cards: #11161D (dark) / #FFFFFF (light), retain border + highlight; remove blur.
+
+On Android WebViews and low‑end web, prefer CSS backdrop‑filter only when available; otherwise static color + translucency.
+
+Tech note (Expo): When true vibrancy is unavailable, overlay a very faint saturation gradient atop the BlurView (transparent in center, lightly colored at edges) to emulate Apple’s material vibrancy without hurting contrast.
+
+3) Layout & Grids
+
+Safe areas respected; content gutters 16dp left/right on feed and lists.
+
+Card vertical spacing: 16dp between posts.
+
+Tap targets: minimum 44×44dp.
+
+Bottom bar height: 56dp; icons 24dp with 10dp labels (if labels are enabled; default off for a clean look, relying on active icon + accessibility labels).
+
+4) Components (specs & states)
+
+4.1 Header
+
+Title centered (iOS), left (Android/Web). Weight 700.
+
+VCoin Badge (persistent, right): pill container on glass:
+
+Height 28–32dp; horizontal padding 10–12dp.
+
+Left icon: custom VCN glyph (or temporary Ionicons logo-bitcoin), size 16–18dp.
+
+Label: “{balance} VCN”, bold 700.
+
+Tap → open DeFi/Wallet screen.
+
+Long‑press (optional): quick actions (Copy address, View rewards).
+
+4.2 GlassCard
+
+Props: elevated:boolean, padding:"sm|md|lg", interactive:boolean.
+
+Default padding 16dp, radius 28dp, Blur intensity 28.
+
+Border 1px, inner top highlight 1px.
+
+Focus/hover (web): border alpha +0.04.
+
+4.3 GlassButton
+
+Pill shape radius 24dp; glass recipe with slightly higher overlay alpha for legibility.
+
+States: default, pressed (scale 0.98, alpha +0.02), disabled (alpha −0.3).
+
+Haptics: light impact on press; success tick for confirmed actions.
+
+4.4 Feed Post Card
+
+Regions: Header (avatar 32dp, author name bold 700, timestamp), Body (text; optional media), Actions row.
+
+Actions: Like, Share, Repost, Comment.
+
+Counters update with optimistic UI; on first engagement, show a +VCN toast (see §6).
+
+Media: 16:9 for landscape; 4:5 portrait; full‑width within card; rounded corners inherit.
+
+Overflow menu: Report, Mute, Copy link.
+
+4.5 Shorts Player
+
+Full‑bleed vertical player, snapping per screen.
+
+Controls overlay (glass) on right: Like/Comment/Share/VCN earned.
+
+Auto‑play with sound off; tap to toggle audio. Show subtle audio icon state.
+
+Preload next/prev clip; maintain 60fps budget.
+
+4.6 DeFi Wallet Card
+
+Top balance (large 28dp text), currency VCN.
+
+Primary actions row: Send, Receive, Stake (GlassButtons).
+
+Secondary: View Rewards, Fees & Risks.
+
+Below: transparency panel explaining rewards accrual and any fees (copy hooks, see §7).
+
+4.7 Notifications Item
+
+Title bold; body secondary. Reward notifications prefix with VCN icon.
+
+Grouped by day; virtualized list.
+
+4.8 Messages Thread Row
+
+Avatar 40dp; name bold; last message secondary; timestamp right‑aligned.
+
+New message dot as accent.
+
+5) Navigation & States
+
+Bottom Tabs: route IDs /feed, /shorts, /defi, /notifications, /messages.
+
+Modals: composer, send/receive/stake, rewards breakdown, fees & risks.
+
+Empty States:
+
+Feed: “No posts yet.” + Create button.
+
+Shorts: placeholder card explaining swipe.
+
+Notifications/Messages: friendly empty copy + CTA.
+
+Error States: banners on network failure with Retry; keep glass styling but increase contrast.
+
+6) VCoin UX (earn & display)
+
+Earning triggers: Like (+1), Share (+2), Repost (+3) [placeholder values].
+
+Instant feedback: On action, show ephemeral VCN Gain Chip near the button:
+
+Example: “+2 VCN” appears in a tiny glass pill, scales 0.9→1.0 (150ms), floats up 12dp then fades (600ms).
+
+Balance update: Badge increments immediately (optimistic), reconcile on server response.
+
+Rewards history: in DeFi → “View Rewards”. List entries with timestamp, source, amount.
+
+Abuse controls (copy placeholder): “Engagement rewards may be capped or revoked for suspicious activity.”
+
+7) Trust, Fees & Risks (transparency surfaces)
+
+Before any on‑chain or wallet action, show a confirmation sheet (glass) with:
+
+From/To, Amount (VCN), Estimated fee, Network, ETA.
+
+Risk note: “Transactions are irreversible. Verify details.”
+
+Primary CTA (Confirm) + Secondary (Cancel). Disable confirm until terms box checked on first use.
+
+Fees & Risks modal: static explainer with accordions for: network fees, staking lockups, slashing risk (if any), reward calculations. Use Body text with 4.5:1 contrast.
+
+8) Accessibility & Performance Budgets
+
+A11y: WCAG AA minimum; dynamic type up to 120% without layout break; focus order logical; all interactive elements get accessible labels.
+
+Motion: Respect OS “reduce motion”; replace scale/slide with fade.
+
+Perf:
+
+Target 60fps scrolling/feed; 30fps minimum under stress.
+
+Glass fallback rule: if frame time > 22ms sustained for >1s, automatically disable blur (switch to opaque style) until next app start.
+
+Video: limit simultaneous decodes to 1; prefetch next item only.
+
+9) Platform Conventions
+
+iOS: Title centered; tab bar translucent with backdrop blur; haptic feedback on tab change (light).
+
+Android: Title left; Material ripple on taps; system back behavior obeyed; elevation slightly higher on opaque fallback.
+
+Web: Use CSS backdrop-filter: blur(20px) when available; otherwise opaque fallback; hover styles for cards/buttons.
+
+10) Cursor Deliverables (what to generate)
+
+Expo Router skeleton with routes: / (tabs) /feed, /shorts, /defi, /notifications, /messages + global header.
+
+Design tokens module exporting colors, spacin

@@ -1,0 +1,402 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ========================================
+// CORE USER & CONTENT MODELS
+// ========================================
+
+model User {
+  id               String    @id @default(uuid())
+  username         String    @unique @db.VarChar(30)
+  email            String    @unique @db.VarChar(255)
+  passwordHash     String    @map("password_hash") @db.VarChar(255)
+  displayName      String?   @map("display_name") @db.VarChar(100)
+  avatarUrl        String?   @map("avatar_url")
+  bio              String?
+  walletAddress    String?   @unique @map("wallet_address") @db.VarChar(42)
+  verificationTier String?   @map("verification_tier") @db.VarChar(20) // 'BASIC', 'VERIFIED', 'PREMIUM', 'ENTERPRISE'
+  coverPhotoUrl    String?   @map("cover_photo_url")
+  location         String?   @db.VarChar(100)
+  website          String?   @db.VarChar(255)
+  socialLinks      Json?     @map("social_links") // {twitter, instagram, linkedin, tiktok}
+  privacySettings  Json?     @map("privacy_settings") // {profileVisibility, postsVisibility, messagesVisibility, showEmail}
+  emailNotifications Json?   @map("email_notifications") // {likes, comments, follows, vcoinEarned}
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  posts                Post[]
+  shorts               Short[]               @relation("UserShorts")
+  comments             Comment[]
+  postInteractions     PostInteraction[]
+  vcoinBalance         VCoinBalance?
+  vcoinTransactions    VCoinTransaction[]
+  vcoinStakes          VCoinStake[]
+  dailyActivities      DailyActivity[]
+  reputation           UserReputationScore?
+  notifications        Notification[]
+  fcmTokens            FcmToken[]
+  followersRelation    Follow[]              @relation("UserFollowers")
+  followingRelation    Follow[]              @relation("UserFollowing")
+  sentMessages         Message[]
+  botFlags             BotDetectionFlag[]
+
+  @@map("users")
+}
+
+model Post {
+  id                  String    @id @default(uuid())
+  userId              String    @map("user_id")
+  content             String
+  mediaType           String?   @map("media_type") @db.VarChar(20) // 'image', 'video', null
+  mediaUrl            String?   @map("media_url")
+  mediaThumbnail      String?   @map("media_thumbnail")
+  likesCount          Int       @default(0) @map("likes_count")
+  sharesCount         Int       @default(0) @map("shares_count")
+  repostsCount        Int       @default(0) @map("reposts_count")
+  commentsCount       Int       @default(0) @map("comments_count")
+  viewsCount          Int       @default(0) @map("views_count")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  user                User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comments            Comment[]
+  interactions        PostInteraction[]
+  qualityScore        ContentQualityScore?
+
+  @@index([userId])
+  @@index([createdAt(sort: Desc)])
+  @@map("posts")
+}
+
+model Short {
+  id            String   @id @default(uuid())
+  userId        String   @map("user_id")
+  title         String?  @db.VarChar(255)
+  videoUrl      String   @map("video_url")
+  thumbnailUrl  String   @map("thumbnail_url")
+  duration      Int      // seconds
+  viewsCount    Int      @default(0) @map("views_count")
+  likesCount    Int      @default(0) @map("likes_count")
+  commentsCount Int      @default(0) @map("comments_count")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user User @relation("UserShorts", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt(sort: Desc)])
+  @@map("shorts")
+}
+
+model Comment {
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
+  postId     String   @map("post_id")
+  parentId   String?  @map("parent_id") // for nested replies
+  content    String
+  likesCount Int      @default(0) @map("likes_count")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post     Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  parent   Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies  Comment[] @relation("CommentReplies")
+
+  @@index([postId])
+  @@index([userId])
+  @@map("comments")
+}
+
+model PostInteraction {
+  id              String   @id @default(uuid())
+  userId          String   @map("user_id")
+  postId          String   @map("post_id")
+  interactionType String   @map("interaction_type") @db.VarChar(20) // 'like', 'share', 'repost'
+  vcoinEarned     Decimal  @default(0) @map("vcoin_earned") @db.Decimal(18, 8)
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId, interactionType])
+  @@index([userId])
+  @@index([postId])
+  @@map("post_interactions")
+}
+
+model Follow {
+  id          String   @id @default(uuid())
+  followerId  String   @map("follower_id")
+  followingId String   @map("following_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  follower  User @relation("UserFollowers", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("UserFollowing", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+  @@map("follows")
+}
+
+model Message {
+  id        String    @id @default(uuid())
+  threadId  String    @map("thread_id")
+  senderId  String    @map("sender_id")
+  content   String
+  mediaUrl  String?   @map("media_url")
+  readAt    DateTime? @map("read_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  sender User @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([threadId, createdAt(sort: Desc)])
+  @@map("messages")
+}
+
+model MessageThread {
+  id              String   @id @default(uuid())
+  participantIds  String[] @map("participant_ids")
+  lastMessageAt   DateTime @default(now()) @map("last_message_at")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@map("message_threads")
+}
+
+model Notification {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  type      String    @db.VarChar(50) // 'like', 'comment', 'follow', 'vcoin_earned'
+  actorId   String?   @map("actor_id")
+  postId    String?   @map("post_id")
+  amount    Decimal?  @db.Decimal(18, 8)
+  message   String?
+  readAt    DateTime? @map("read_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("notifications")
+}
+
+model FcmToken {
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
+  token      String
+  deviceType String?  @map("device_type") @db.VarChar(20) // 'ios', 'android', 'web'
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("fcm_tokens")
+}
+
+// ========================================
+// TOKEN ECONOMY MODELS
+// ========================================
+
+model VCoinBalance {
+  userId           String    @id @map("user_id")
+  availableBalance Decimal   @default(0) @map("available_balance") @db.Decimal(18, 8)
+  stakedBalance    Decimal   @default(0) @map("staked_balance") @db.Decimal(18, 8)
+  earnedTotal      Decimal   @default(0) @map("earned_total") @db.Decimal(18, 8)
+  spentTotal       Decimal   @default(0) @map("spent_total") @db.Decimal(18, 8)
+  lastRewardAt     DateTime? @map("last_reward_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("vcoin_balances")
+}
+
+model VCoinTransaction {
+  id            String   @id @default(uuid())
+  userId        String   @map("user_id")
+  amount        Decimal  @db.Decimal(18, 8)
+  type          String   @db.VarChar(20) // 'earn', 'send', 'receive', 'stake'
+  source        String?  @db.VarChar(50) // 'like', 'share', 'repost', 'user_transfer'
+  relatedPostId String?  @map("related_post_id")
+  relatedUserId String?  @map("related_user_id")
+  txHash        String?  @map("tx_hash") @db.VarChar(66)
+  status        String   @default("pending") @db.VarChar(20) // 'pending', 'completed', 'failed'
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("vcoin_transactions")
+}
+
+model DailyActivity {
+  id                   String   @id @default(uuid())
+  userId               String   @map("user_id")
+  date                 DateTime @db.Date
+  postsCount           Int      @default(0) @map("posts_count")
+  likesCount           Int      @default(0) @map("likes_count")
+  commentsCount        Int      @default(0) @map("comments_count")
+  sharesCount          Int      @default(0) @map("shares_count")
+  followsCount         Int      @default(0) @map("follows_count")
+  totalPoints          Int      @default(0) @map("total_points")
+  botPenaltyApplied    Decimal  @default(1.0) @map("bot_penalty_applied") @db.Decimal(3, 2)
+  qualityMultiplier    Decimal  @default(1.0) @map("quality_multiplier") @db.Decimal(4, 2)
+  reputationMultiplier Decimal  @default(1.0) @map("reputation_multiplier") @db.Decimal(4, 2)
+  finalPoints          Int      @default(0) @map("final_points")
+  vcnEarned            Decimal  @default(0) @map("vcn_earned") @db.Decimal(18, 8)
+  createdAt            DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([date(sort: Desc), userId])
+  @@map("daily_activities")
+}
+
+model ContentQualityScore {
+  id             String   @id @default(uuid())
+  postId         String   @unique @map("post_id")
+  engagementRate Decimal  @map("engagement_rate") @db.Decimal(6, 4)
+  retentionScore Decimal  @map("retention_score") @db.Decimal(4, 2)
+  viralityScore  Decimal  @map("virality_score") @db.Decimal(4, 2)
+  commentQuality Decimal  @map("comment_quality") @db.Decimal(4, 2)
+  overallScore   Decimal  @map("overall_score") @db.Decimal(4, 2)
+  multiplier     Decimal  @db.Decimal(4, 2)
+  calculatedAt   DateTime @default(now()) @map("calculated_at")
+
+  // Relations
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+  @@map("content_quality_scores")
+}
+
+model UserReputationScore {
+  userId                   String   @id @map("user_id")
+  accountAgeScore          Decimal  @default(1.0) @map("account_age_score") @db.Decimal(4, 2)
+  historicalQualityScore   Decimal  @default(1.0) @map("historical_quality_score") @db.Decimal(4, 2)
+  verificationScore        Decimal  @default(1.0) @map("verification_score") @db.Decimal(4, 2)
+  communityStandingScore   Decimal  @default(1.0) @map("community_standing_score") @db.Decimal(4, 2)
+  overallReputation        Decimal  @default(1.0) @map("overall_reputation") @db.Decimal(4, 2)
+  lastCalculated           DateTime @default(now()) @map("last_calculated")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_reputation_scores")
+}
+
+model VCoinStake {
+  id             String   @id @default(uuid())
+  userId         String   @map("user_id")
+  amount         Decimal  @db.Decimal(18, 8)
+  featureType    String   @map("feature_type") @db.VarChar(50)
+  lockPeriodDays Int      @map("lock_period_days")
+  startDate      DateTime @default(now()) @map("start_date")
+  unlockDate     DateTime @map("unlock_date")
+  status         String   @default("ACTIVE") @db.VarChar(20) // 'ACTIVE', 'UNLOCKED', 'WITHDRAWN'
+  apy            Decimal? @db.Decimal(5, 2)
+  rewardsEarned  Decimal  @default(0) @map("rewards_earned") @db.Decimal(18, 8)
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+  @@index([unlockDate])
+  @@map("vcoin_stakes")
+}
+
+model VCoinBurn {
+  id       String   @id @default(uuid())
+  amount   Decimal  @db.Decimal(18, 8)
+  source   String   @db.VarChar(50) // 'TRANSACTION_FEE', 'BUYBACK', 'PENALTY'
+  txHash   String?  @map("tx_hash") @db.VarChar(66)
+  burnedAt DateTime @default(now()) @map("burned_at")
+
+  @@map("vcoin_burns")
+}
+
+model VCoinBuyback {
+  id         String   @id @default(uuid())
+  usdSpent   Decimal  @map("usd_spent") @db.Decimal(18, 2)
+  vcnBought  Decimal  @map("vcn_bought") @db.Decimal(18, 8)
+  vcnBurned  Decimal  @map("vcn_burned") @db.Decimal(18, 8)
+  vcnLocked  Decimal  @map("vcn_locked") @db.Decimal(18, 8)
+  avgPrice   Decimal? @map("avg_price") @db.Decimal(18, 8)
+  dexUsed    String?  @map("dex_used") @db.VarChar(50)
+  txHash     String?  @map("tx_hash") @db.VarChar(66)
+  executedAt DateTime @default(now()) @map("executed_at")
+
+  @@map("vcoin_buybacks")
+}
+
+model DailyRewardDistribution {
+  id               String   @id @default(uuid())
+  distributionDate DateTime @unique @map("distribution_date") @db.Date
+  totalPool        Decimal  @map("total_pool") @db.Decimal(18, 8)
+  activeUsersCount Int      @map("active_users_count")
+  totalPoints      BigInt   @map("total_points")
+  vcnDistributed   Decimal  @map("vcn_distributed") @db.Decimal(18, 8)
+  avgRewardPerUser Decimal? @map("avg_reward_per_user") @db.Decimal(18, 8)
+  topEarnerUserId  String?  @map("top_earner_user_id")
+  topEarnerAmount  Decimal? @map("top_earner_amount") @db.Decimal(18, 8)
+  executedAt       DateTime @default(now()) @map("executed_at")
+
+  @@index([distributionDate(sort: Desc)])
+  @@map("daily_reward_distributions")
+}
+
+model ModuleRevenue {
+  id               String   @id @default(uuid())
+  moduleName       String   @map("module_name") @db.VarChar(50)
+  month            DateTime @db.Date
+  revenueUsd       Decimal  @default(0) @map("revenue_usd") @db.Decimal(18, 2)
+  costsUsd         Decimal  @default(0) @map("costs_usd") @db.Decimal(18, 2)
+  profitUsd        Decimal  @default(0) @map("profit_usd") @db.Decimal(18, 2)
+  vcnFeesCollected Decimal  @default(0) @map("vcn_fees_collected") @db.Decimal(18, 8)
+  vcnBurned        Decimal  @default(0) @map("vcn_burned") @db.Decimal(18, 8)
+  vcnStaked        Decimal  @default(0) @map("vcn_staked") @db.Decimal(18, 8)
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  @@unique([moduleName, month])
+  @@map("module_revenues")
+}
+
+model BotDetectionFlag {
+  id             String    @id @default(uuid())
+  userId         String    @map("user_id")
+  flagType       String    @map("flag_type") @db.VarChar(50)
+  severity       String    @db.VarChar(20) // 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL'
+  description    String?
+  penaltyApplied Decimal?  @map("penalty_applied") @db.Decimal(3, 2)
+  flaggedAt      DateTime  @default(now()) @map("flagged_at")
+  resolvedAt     DateTime? @map("resolved_at")
+  status         String    @default("ACTIVE") @db.VarChar(20) // 'ACTIVE', 'RESOLVED', 'APPEAL'
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+  @@map("bot_detection_flags")
+}
