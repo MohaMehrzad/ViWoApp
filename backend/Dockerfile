@@ -32,11 +32,14 @@ RUN npm run build
 # ============================================
 FROM node:20-alpine
 
-# Install dumb-init for proper signal handling
-RUN apk add --no-cache dumb-init
-
-# Install FFmpeg for video processing
-RUN apk add --no-cache ffmpeg
+# Install system dependencies
+# - dumb-init: proper signal handling
+# - ffmpeg: video processing
+# - openssl1.1-compat: required by Prisma 5.22.0 on Alpine
+RUN apk add --no-cache \
+    dumb-init \
+    ffmpeg \
+    openssl1.1-compat
 
 # Create non-root user for security
 RUN addgroup -g 1001 -S nodejs && \
