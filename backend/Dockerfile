@@ -6,7 +6,7 @@
 # ============================================
 # Stage 1: Builder
 # ============================================
-FROM node:20-alpine AS builder
+FROM node:20-alpine3.19 AS builder
 
 # Set working directory
 WORKDIR /app
@@ -30,16 +30,16 @@ RUN npm run build
 # ============================================
 # Stage 2: Production
 # ============================================
-FROM node:20-alpine
+FROM node:20-alpine3.19
 
 # Install system dependencies
 # - dumb-init: proper signal handling
 # - ffmpeg: video processing
-# - openssl1.1-compat: required by Prisma 5.22.0 on Alpine
+# - openssl: required by Prisma
 RUN apk add --no-cache \
     dumb-init \
     ffmpeg \
-    openssl1.1-compat
+    openssl
 
 # Create non-root user for security
 RUN addgroup -g 1001 -S nodejs && \
