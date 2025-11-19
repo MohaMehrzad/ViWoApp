@@ -34,11 +34,27 @@ export class AppConfigService {
 
   // JWT
   get jwtAccessSecret(): string {
-    return this.configService.get<string>('JWT_ACCESS_SECRET', 'secret');
+    const secret = this.configService.get<string>('JWT_ACCESS_SECRET', 'secret');
+    if (this.nodeEnv === 'production' && (!secret || secret === 'secret' || secret.length < 32)) {
+      throw new Error(
+        'JWT_ACCESS_SECRET must be set to a strong secret (min 32 characters) in production environment'
+      );
+    }
+    return secret;
   }
 
   get jwtRefreshSecret(): string {
-    return this.configService.get<string>('JWT_REFRESH_SECRET', 'secret');
+    const secret = this.configService.get<string>('JWT_REFRESH_SECRET', 'secret');
+    if (this.nodeEnv === 'production' && (!secret || secret === 'secret' || secret.length < 32)) {
+      throw new Error(
+        'JWT_REFRESH_SECRET must be set to a strong secret (min 32 characters) in production environment'
+      );
+    }
+    return secret;
+  }
+  
+  get redisPassword(): string {
+    return this.configService.get<string>('REDIS_PASSWORD', '');
   }
 
   get jwtAccessExpiry(): string {

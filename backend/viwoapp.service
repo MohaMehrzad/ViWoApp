@@ -1,0 +1,64 @@
+# ============================================
+# SYSTEMD SERVICE FILE FOR VIWOAPP BACKEND
+# ============================================
+# This is a systemd service unit file for running ViWoApp Backend
+# with Docker Compose in production
+#
+# Installation:
+#   sudo cp viwoapp.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable viwoapp.service
+#   sudo systemctl start viwoapp.service
+#
+# Management:
+#   sudo systemctl status viwoapp
+#   sudo systemctl restart viwoapp
+#   sudo systemctl stop viwoapp
+#   sudo journalctl -u viwoapp -f
+
+[Unit]
+Description=ViWoApp Backend Service
+Documentation=https://github.com/your-org/viwoapp
+After=network.target docker.service
+Requires=docker.service
+PartOf=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+
+# User and Group
+User=viwoapp
+Group=viwoapp
+
+# Working directory
+WorkingDirectory=/var/www/viwoapp/backend
+
+# Environment
+Environment="PATH=/usr/local/bin:/usr/bin:/bin"
+EnvironmentFile=/var/www/viwoapp/backend/.env
+
+# Commands
+ExecStartPre=/usr/bin/docker-compose -f docker-compose.prod.yml pull --quiet
+ExecStart=/usr/bin/docker-compose -f docker-compose.prod.yml up -d --remove-orphans
+ExecStop=/usr/bin/docker-compose -f docker-compose.prod.yml down
+ExecReload=/usr/bin/docker-compose -f docker-compose.prod.yml restart
+
+# Restart policy
+Restart=on-failure
+RestartSec=10s
+TimeoutStartSec=300
+TimeoutStopSec=120
+
+# Security
+NoNewPrivileges=true
+PrivateTmp=true
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=viwoapp
+
+[Install]
+WantedBy=multi-user.target
+

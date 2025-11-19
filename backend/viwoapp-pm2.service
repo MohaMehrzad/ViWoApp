@@ -1,0 +1,70 @@
+# ============================================
+# SYSTEMD SERVICE FILE FOR VIWOAPP BACKEND (PM2)
+# ============================================
+# This is an alternative systemd service for running ViWoApp Backend
+# with PM2 (without Docker)
+#
+# Installation:
+#   sudo cp viwoapp-pm2.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable viwoapp-pm2.service
+#   sudo systemctl start viwoapp-pm2.service
+#
+# Management:
+#   sudo systemctl status viwoapp-pm2
+#   sudo systemctl restart viwoapp-pm2
+#   sudo systemctl stop viwoapp-pm2
+#   sudo journalctl -u viwoapp-pm2 -f
+
+[Unit]
+Description=ViWoApp Backend Service (PM2)
+Documentation=https://github.com/your-org/viwoapp
+After=network.target postgresql.service redis.service
+Wants=postgresql.service redis.service
+
+[Service]
+Type=forking
+
+# User and Group
+User=viwoapp
+Group=viwoapp
+
+# Working directory
+WorkingDirectory=/var/www/viwoapp/backend
+
+# Environment
+Environment="PATH=/usr/local/bin:/usr/bin:/bin:/home/viwoapp/.nvm/versions/node/v20.10.0/bin"
+Environment="PM2_HOME=/home/viwoapp/.pm2"
+EnvironmentFile=/var/www/viwoapp/backend/.env
+
+# Commands
+ExecStart=/usr/local/bin/pm2 start ecosystem.config.js --env production
+ExecReload=/usr/local/bin/pm2 reload ecosystem.config.js --env production
+ExecStop=/usr/local/bin/pm2 stop ecosystem.config.js
+
+# Restart policy
+Restart=on-failure
+RestartSec=10s
+TimeoutStartSec=60
+TimeoutStopSec=60
+
+# Process management
+KillMode=process
+PIDFile=/home/viwoapp/.pm2/pm2.pid
+
+# Security
+NoNewPrivileges=true
+PrivateTmp=true
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=4096
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=viwoapp-pm2
+
+[Install]
+WantedBy=multi-user.target
+

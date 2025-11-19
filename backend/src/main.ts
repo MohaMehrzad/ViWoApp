@@ -3,6 +3,8 @@ import { ValidationPipe } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 import helmet from 'helmet';
+import * as compression from 'compression';
+import * as express from 'express';
 import * as dotenv from 'dotenv';
 import { join } from 'path';
 
@@ -12,6 +14,13 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     logger: ['error', 'warn', 'log', 'debug', 'verbose'],
   });
+
+  // Request size limits - Prevent DoS attacks
+  app.use(express.json({ limit: '10mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+  // Enable compression
+  app.use(compression());
 
   // Security - Configure Helmet with proper CSP for video streaming
   app.use(
@@ -32,11 +41,20 @@ async function bootstrap() {
   );
 
   // CORS - Must be before static assets
+  const corsOrigins = process.env.CORS_ORIGIN?.split(',').map(origin => origin.trim()) || [];
+  
+  // In development, allow localhost if no CORS_ORIGIN is set
+  if (process.env.NODE_ENV !== 'production' && corsOrigins.length === 0) {
+    corsOrigins.push('http://localhost:8081', 'http://192.168.31.158:8081');
+  }
+  
+  // In production, enforce CORS_ORIGIN environment variable
+  if (process.env.NODE_ENV === 'production' && corsOrigins.length === 0) {
+    throw new Error('CORS_ORIGIN must be set in production environment');
+  }
+  
   app.enableCors({
-    origin: process.env.CORS_ORIGIN?.split(',') || [
-      'http://localhost:8081',
-      'http://192.168.31.158:8081',
-    ],
+    origin: corsOrigins,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Range'],

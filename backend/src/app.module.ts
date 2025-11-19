@@ -6,6 +6,8 @@ import { APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
+import { CacheModule } from './cache/cache.module';
+import { QueueModule } from './queue/queue.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { PostsModule } from './posts/posts.module';
@@ -37,6 +39,8 @@ import { LoggerModule } from './common/logger/logger.module';
       limit: 100, // 100 requests
     }]),
     PrismaModule,
+    CacheModule,
+    QueueModule,
     LoggerModule,
     AuthModule,
     UsersModule,

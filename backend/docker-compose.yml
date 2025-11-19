@@ -5,9 +5,9 @@ services:
     image: postgres:16-alpine
     container_name: viwoapp-postgres
     environment:
-      POSTGRES_USER: viwoapp
-      POSTGRES_PASSWORD: dev_password_123
-      POSTGRES_DB: viwoapp
+      POSTGRES_USER: ${POSTGRES_USER:-viwoapp}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dev_password_123}
+      POSTGRES_DB: ${POSTGRES_DB:-viwoapp}
       POSTGRES_HOST_AUTH_METHOD: trust
     ports:
       - "5433:5432"
@@ -23,6 +23,7 @@ services:
   redis:
     image: redis:7-alpine
     container_name: viwoapp-redis
+    command: redis-server ${REDIS_PASSWORD:+--requirepass} ${REDIS_PASSWORD}
     ports:
       - "6379:6379"
     restart: unless-stopped

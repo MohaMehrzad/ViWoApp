@@ -6,8 +6,12 @@ import {
   ConnectedSocket,
   OnGatewayConnection,
   OnGatewayDisconnect,
+  OnGatewayInit,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { createAdapter } from '@socket.io/redis-adapter';
+import { createClient } from 'redis';
+import { ConfigService } from '@nestjs/config';
 import { MessagesService } from './messages.service';
 
 @WebSocketGateway({
@@ -16,13 +20,44 @@ import { MessagesService } from './messages.service';
   },
   namespace: '/messages',
 })
-export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class MessagesGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
 
   private userSockets: Map<string, string> = new Map(); // userId -> socketId
 
-  constructor(private messagesService: MessagesService) {}
+  constructor(
+    private messagesService: MessagesService,
+    private configService: ConfigService,
+  ) {}
+
+  async afterInit(server: Server) {
+    // Set up Redis adapter for horizontal scaling
+    const redisHost = this.configService.get<string>('REDIS_HOST', 'localhost');
+    const redisPort = this.configService.get<number>('REDIS_PORT', 6379);
+    const redisPassword = this.configService.get<string>('REDIS_PASSWORD', '');
+
+    try {
+      const pubClient = createClient({
+        socket: {
+          host: redisHost,
+          port: redisPort,
+        },
+        password: redisPassword || undefined,
+      });
+      
+      const subClient = pubClient.duplicate();
+
+      await Promise.all([pubClient.connect(), subClient.connect()]);
+
+      server.adapter(createAdapter(pubClient, subClient));
+      
+      console.log('✅ WebSocket Redis adapter configured');
+    } catch (error) {
+      console.error('❌ WebSocket Redis adapter failed:', error.message);
+      console.log('⚠️  WebSocket will run in single-instance mode');
+    }
+  }
 
   handleConnection(client: Socket) {
     console.log(`Client connected: ${client.id}`);
