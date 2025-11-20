@@ -12,6 +12,8 @@ import { getRelativeTime } from '@/utils/formatters';
  * 
  * @param timestamp - Unix timestamp in milliseconds
  * @returns Formatted relative time string that auto-updates
+ * @deprecated Backend now provides precomputed relativeTime in API responses.
+ * PostCard now uses the backend value. This is kept for other components.
  */
 export function useAutoUpdateTime(timestamp: number): string {
   const [relativeTime, setRelativeTime] = useState(() => getRelativeTime(timestamp));

@@ -4,7 +4,8 @@ export class PostResponseDto {
   mediaType: string | null;
   mediaUrl: string | null;
   mediaThumbnail: string | null;
-  aspectRatio: number | null;
+  mediaMedium?: string | null;
+  aspectRatio: number; // Always provided with default 1.777 (16:9)
   likesCount: number;
   sharesCount: number;
   repostsCount: number;
@@ -12,6 +13,13 @@ export class PostResponseDto {
   viewsCount: number;
   createdAt: Date;
   updatedAt: Date;
+  
+  // Precomputed formatted values for display
+  relativeTime: string; // e.g., "5m", "2h", "3d"
+  likesCountFormatted: string; // e.g., "1.2K", "3.4M"
+  sharesCountFormatted: string;
+  repostsCountFormatted: string;
+  commentsCountFormatted: string;
   
   user: {
     id: string;

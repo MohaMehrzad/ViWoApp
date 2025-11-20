@@ -4,6 +4,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as util from 'util';
 import { exec } from 'child_process';
+import * as sharp from 'sharp';
 
 const execPromise = util.promisify(exec);
 
@@ -22,32 +23,77 @@ export class UploadService {
 
   async processImageUpload(file: Express.Multer.File): Promise<{
     url: string;
+    thumbnailUrl: string;
+    mediumUrl: string;
     aspectRatio: number;
   }> {
-    // Generate URL for the uploaded file
     const baseUrl = this.configService.get<string>('BASE_URL', 'http://localhost:3000');
-    const url = `${baseUrl}/uploads/${file.filename}`;
+    const imagePath = path.join(this.uploadDir, file.filename);
+    const baseName = file.filename.replace(/\.[^/.]+$/, '');
     
-    // Calculate aspect ratio using ffprobe (works for images too)
     let aspectRatio = 16 / 9; // Default fallback
     
     try {
-      const imagePath = path.join(this.uploadDir, file.filename);
-      const cmd = `ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of csv=p=0 "${imagePath}"`;
-      const { stdout } = await execPromise(cmd);
-      const [width, height] = stdout.trim().split(',').map(Number);
+      // Get image metadata
+      const metadata = await sharp(imagePath).metadata();
       
-      if (width && height && height > 0) {
-        aspectRatio = width / height;
+      if (metadata.width && metadata.height && metadata.height > 0) {
+        aspectRatio = metadata.width / metadata.height;
         // Clamp to reasonable range (0.5 to 2.0)
         aspectRatio = Math.max(0.5, Math.min(aspectRatio, 2.0));
       }
+
+      // Generate optimized versions
+      const thumbnailFilename = `${baseName}_thumb.webp`;
+      const mediumFilename = `${baseName}_medium.webp`;
+      const fullFilename = `${baseName}_full.webp`;
+
+      const thumbnailPath = path.join(this.uploadDir, thumbnailFilename);
+      const mediumPath = path.join(this.uploadDir, mediumFilename);
+      const fullPath = path.join(this.uploadDir, fullFilename);
+
+      // Generate all sizes in parallel for speed
+      await Promise.all([
+        // Thumbnail: 150x150 (cropped to square)
+        sharp(imagePath)
+          .resize(150, 150, { fit: 'cover', position: 'center' })
+          .webp({ quality: 80 })
+          .toFile(thumbnailPath),
+        
+        // Medium: max 800px on longest side
+        sharp(imagePath)
+          .resize(800, 800, { fit: 'inside', withoutEnlargement: true })
+          .webp({ quality: 85 })
+          .toFile(mediumPath),
+        
+        // Full: max 1920px on longest side
+        sharp(imagePath)
+          .resize(1920, 1920, { fit: 'inside', withoutEnlargement: true })
+          .webp({ quality: 90 })
+          .toFile(fullPath),
+      ]);
+
+      // Delete original file to save space
+      if (fs.existsSync(imagePath)) {
+        fs.unlinkSync(imagePath);
+      }
+
+      return {
+        url: `${baseUrl}/uploads/${fullFilename}`,
+        thumbnailUrl: `${baseUrl}/uploads/${thumbnailFilename}`,
+        mediumUrl: `${baseUrl}/uploads/${mediumFilename}`,
+        aspectRatio,
+      };
     } catch (error) {
-      console.error('Failed to calculate image aspect ratio:', error);
-      // Use default aspect ratio
+      console.error('Failed to process image with Sharp:', error);
+      // Fallback to original file if processing fails
+      return {
+        url: `${baseUrl}/uploads/${file.filename}`,
+        thumbnailUrl: `${baseUrl}/uploads/${file.filename}`,
+        mediumUrl: `${baseUrl}/uploads/${file.filename}`,
+        aspectRatio,
+      };
     }
-    
-    return { url, aspectRatio };
   }
 
   async processVideoUpload(file: Express.Multer.File): Promise<{

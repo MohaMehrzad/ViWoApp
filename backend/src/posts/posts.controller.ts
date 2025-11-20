@@ -27,6 +27,16 @@ export class PostsController {
   }
 
   @Public()
+  @Get('feed')
+  async findAllCursor(
+    @Query('cursor') cursor?: string,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit = 20,
+    @GetUser('id') userId?: string,
+  ) {
+    return this.postsService.findAllCursor(cursor, limit, userId);
+  }
+
+  @Public()
   @Get('user/:userId')
   async findByUserId(
     @Param('userId') userId: string,

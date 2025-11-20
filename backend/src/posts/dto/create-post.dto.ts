@@ -19,6 +19,10 @@ export class CreatePostDto {
   mediaThumbnail?: string;
 
   @IsOptional()
+  @IsString()
+  mediaMedium?: string;
+
+  @IsOptional()
   @IsNumber()
   @Min(0.1)
   @Max(10)

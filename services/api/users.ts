@@ -81,5 +81,14 @@ export const usersApi = {
     });
     return response.data.users;
   },
+
+  /**
+   * Get aggregated profile view (user + stats + recent posts)
+   * Reduces 3 API calls to 1 for faster loading
+   */
+  getProfileView: async (id: string): Promise<any> => {
+    const response = await apiClient.get(`/users/${id}/profile-view`);
+    return response.data;
+  },
 };
 

@@ -1,4 +1,3 @@
-import { VCoinRewards } from '@/constants/theme';
 import { vcoinApi } from '@/services/api/vcoin';
 import React, { createContext, ReactNode, useCallback, useContext, useState } from 'react';
 
@@ -15,7 +14,7 @@ interface VCoinEarning {
 interface VCoinContextType {
   balance: number;
   earnings: VCoinEarning[];
-  earnVCoin: (action: EarnAction, postId?: string) => Promise<number>;
+  earnVCoin: (amount: number, action: EarnAction, postId?: string) => void;
   loadBalance: () => Promise<void>;
   resetBalance: () => Promise<void>;
 }
@@ -37,9 +36,8 @@ export function VCoinProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // Earn VCoin from action (optimistic update - actual earning happens on backend)
-  const earnVCoin = useCallback(async (action: EarnAction, postId?: string): Promise<number> => {
-    const amount = VCoinRewards[action];
+  // Earn VCoin from action (backend provides the amount)
+  const earnVCoin = useCallback((amount: number, action: EarnAction, postId?: string): void => {
     const earning: VCoinEarning = {
       id: `${Date.now()}-${Math.random()}`,
       amount,
@@ -48,20 +46,10 @@ export function VCoinProvider({ children }: { children: ReactNode }) {
       postId,
     };
 
-    // Optimistic update - add to balance immediately
+    // Update balance directly from backend response
     setBalance(prev => prev + amount);
     setEarnings(prev => [earning, ...prev]);
-
-    // The backend will automatically credit VCoin for actions like like/share/repost
-    // We'll refresh the balance periodically or after actions to stay in sync
-    
-    // Optionally refresh balance from backend after a delay to ensure sync
-    setTimeout(() => {
-      loadBalance().catch(console.error);
-    }, 2000);
-
-    return amount;
-  }, [loadBalance]);
+  }, []);
 
   // Reset balance (for testing - clears local state only)
   const resetBalance = useCallback(async () => {

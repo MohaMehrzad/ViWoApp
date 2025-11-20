@@ -96,5 +96,14 @@ export class UsersController {
   async getProfileStats(@Param('id') userId: string) {
     return this.usersService.getProfileStats(userId);
   }
+
+  @Public()
+  @Get(':id/profile-view')
+  async getProfileView(
+    @Param('id') userId: string,
+    @GetUser('id') currentUserId?: string,
+  ) {
+    return this.usersService.getProfileView(userId, currentUserId);
+  }
 }
 

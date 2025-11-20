@@ -1,12 +1,23 @@
 import { Injectable, NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common';
+import { InjectQueue } from '@nestjs/bull';
+import { Queue } from 'bull';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserResponseDto } from './dto/user-response.dto';
 import { ProfileStatsDto } from './dto/profile-stats.dto';
+import { PostsService } from '../posts/posts.service';
+import { CacheService } from '../cache/cache.service';
+import { CacheInvalidationService } from '../cache/cache-invalidation.service';
 
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private postsService: PostsService,
+    private cache: CacheService,
+    private cacheInvalidation: CacheInvalidationService,
+    @InjectQueue('notification') private notificationQueue: Queue,
+  ) {}
 
   async findById(id: string, requestingUserId?: string): Promise<UserResponseDto> {
     const user = await this.prisma.user.findUnique({
@@ -175,6 +186,9 @@ export class UsersService {
       },
     });
 
+    // Invalidate all user-related caches
+    await this.cacheInvalidation.invalidateUserCache(userId);
+
     return updatedUser;
   }
 
@@ -214,15 +228,19 @@ export class UsersService {
       },
     });
 
-    // Create notification for followed user
-    await this.prisma.notification.create({
-      data: {
-        userId: followingId,
-        type: 'follow',
-        actorId: userId,
-        message: `${targetUser.username} started following you`,
-      },
+    // Queue notification for followed user (async, non-blocking)
+    await this.notificationQueue.add('create', {
+      userId: followingId,
+      type: 'follow',
+      actorId: userId,
+      message: `${targetUser.username} started following you`,
     });
+
+    // Invalidate user stats cache for both users
+    await Promise.all([
+      this.cacheInvalidation.invalidateUserStats(userId),
+      this.cacheInvalidation.invalidateUserStats(followingId),
+    ]);
 
     return { message: 'Successfully followed user' };
   }
@@ -255,6 +273,12 @@ export class UsersService {
         },
       },
     });
+
+    // Invalidate user stats cache for both users
+    await Promise.all([
+      this.cacheInvalidation.invalidateUserStats(userId),
+      this.cacheInvalidation.invalidateUserStats(followingId),
+    ]);
 
     return { message: 'Successfully unfollowed user' };
   }
@@ -386,6 +410,13 @@ export class UsersService {
   }
 
   async getProfileStats(userId: string) {
+    // Try to get from cache first (2 minutes TTL)
+    const cacheKey = `user:stats:${userId}`;
+    const cached = await this.cache.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
     // Get user basic info
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
@@ -444,7 +475,7 @@ export class UsersService {
       },
     });
 
-    return {
+    const stats = {
       // VCoin stats
       vcoinBalance: vcoinBalance ? Number(vcoinBalance.availableBalance) : 0,
       vcoinStaked: vcoinBalance ? Number(vcoinBalance.stakedBalance) : 0,
@@ -474,6 +505,50 @@ export class UsersService {
       followersCount: user._count.followersRelation,
       followingCount: user._count.followingRelation,
     };
+
+    // Cache for 2 minutes (120 seconds)
+    await this.cache.set(cacheKey, stats, 120);
+
+    return stats;
+  }
+
+  /**
+   * Get aggregated profile view - combines user, stats, and recent posts
+   * Reduces 3 API calls to 1 for faster profile loading
+   */
+  async getProfileView(userId: string, currentUserId?: string) {
+    // Try to get from cache first (5 minutes TTL)
+    const cacheKey = `profile:view:${userId}:${currentUserId || 'anon'}`;
+    const cached = await this.cache.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    // Fetch all data in parallel for optimal performance
+    const [user, stats, recentPostsData] = await Promise.all([
+      this.findById(userId, currentUserId),
+      this.getProfileStats(userId),
+      this.postsService.findByUserId(userId, 1, 10), // First page only
+    ]);
+
+    const profileView = {
+      user,
+      stats,
+      recentPosts: recentPostsData.posts,
+      pagination: {
+        page: 1,
+        hasMore: recentPostsData.hasMore,
+        total: recentPostsData.total,
+      },
+      // Additional computed fields
+      isFollowing: user.isFollowing || false,
+      isOwnProfile: currentUserId === userId,
+    };
+
+    // Cache for 5 minutes (300 seconds)
+    await this.cache.set(cacheKey, profileView, 300);
+
+    return profileView;
   }
 }
 

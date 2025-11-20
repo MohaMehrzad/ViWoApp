@@ -1,10 +1,44 @@
 import { Processor, Process } from '@nestjs/bull';
 import { Job } from 'bull';
 import { Logger } from '@nestjs/common';
+import { PrismaService } from '../../prisma/prisma.service';
 
 @Processor('notification')
 export class NotificationProcessor {
   private readonly logger = new Logger(NotificationProcessor.name);
+
+  constructor(private prisma: PrismaService) {}
+
+  @Process('create')
+  async handleCreateNotification(job: Job) {
+    const { userId, type, actorId, postId, message, amount } = job.data;
+    
+    this.logger.log(`Creating notification for user: ${userId}, type: ${type}`);
+    
+    try {
+      await this.prisma.notification.create({
+        data: {
+          userId,
+          type,
+          actorId: actorId || null,
+          postId: postId || null,
+          message: message || null,
+          amount: amount || null,
+        },
+      });
+      
+      this.logger.log(`Notification created successfully for user: ${userId}`);
+      
+      return {
+        success: true,
+        userId,
+        type,
+      };
+    } catch (error) {
+      this.logger.error(`Notification creation failed: ${error.message}`, error.stack);
+      throw error;
+    }
+  }
 
   @Process('send-push-notification')
   async handlePushNotification(job: Job) {

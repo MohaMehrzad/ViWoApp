@@ -1,33 +1,29 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  RefreshControl,
-  Pressable,
-} from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BlurView } from '@react-native-community/blur';
-import { GlassCard } from '@/components/GlassCard';
-import { GlassButton } from '@/components/GlassButton';
-import { PostCard } from '@/components/PostCard';
-import { LoadingSpinner } from '@/components/LoadingState';
 import { ErrorView } from '@/components/ErrorView';
+import { GlassButton } from '@/components/GlassButton';
+import { LoadingSpinner } from '@/components/LoadingState';
+import { PostCard } from '@/components/PostCard';
 import { ProfileHeader } from '@/components/ProfileHeader';
 import { ProfileStatsGrid } from '@/components/ProfileStatsGrid';
+import { ProfileTab, ProfileTabs } from '@/components/ProfileTabs';
 import { SocialLinks } from '@/components/SocialLinks';
-import { ProfileTabs, ProfileTab } from '@/components/ProfileTabs';
-import { useUser } from '@/hooks/useUser';
-import { useUserPosts } from '@/hooks/usePosts';
-import { useProfileStats } from '@/hooks/useProfileStats';
-import { useFollowActions } from '@/hooks/useFollowActions';
+import { LiquidGlass, Spacing, Typography } from '@/constants/theme';
 import { useAuth } from '@/contexts/AuthContext';
+import { useFollowActions } from '@/hooks/useFollowActions';
+import { useProfileView } from '@/hooks/useProfileView';
 import { useTheme } from '@/hooks/useTheme';
-import { Spacing, Typography, Layout, LiquidGlass } from '@/constants/theme';
-import { formatNumber } from '@/utils/formatters';
 import { LucideIcons } from '@/utils/iconMapping';
+import { BlurView } from '@react-native-community/blur';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import {
+    Pressable,
+    RefreshControl,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function ProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -39,21 +35,17 @@ export default function ProfileScreen() {
   const [activeTab, setActiveTab] = useState<ProfileTab>('posts');
   const [refreshing, setRefreshing] = useState(false);
 
-  const { data: user, isLoading: userLoading, error: userError, refetch: refetchUser } = useUser(id);
-  const { data: stats, isLoading: statsLoading, refetch: refetchStats } = useProfileStats(id);
-  const {
-    data: postsData,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    isLoading: postsLoading,
-    refetch: refetchPosts,
-  } = useUserPosts(id);
-
+  // Use aggregated profile view endpoint - reduces 3 API calls to 1
+  const { data: profileView, isLoading, error, refetch } = useProfileView(id);
+  
+  // Extract data from aggregated response
+  const user = profileView?.user;
+  const stats = profileView?.stats;
+  const posts = profileView?.recentPosts ?? [];
+  
   const { follow, unfollow, isFollowing, isUnfollowing } = useFollowActions(id);
   const { logout } = useAuth();
 
-  const posts = postsData?.pages.flatMap((page) => page.posts).filter(Boolean) ?? [];
   const isOwnProfile = currentUser?.id === id;
 
   const handleFollowToggle = async () => {
@@ -63,7 +55,7 @@ export default function ProfileScreen() {
       } else {
         await follow();
       }
-      refetchUser();
+      refetch();
     } catch (error) {
       console.error('Failed to follow/unfollow:', error);
     }
@@ -80,11 +72,7 @@ export default function ProfileScreen() {
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
-      await Promise.all([
-        refetchUser(),
-        refetchStats(),
-        refetchPosts(),
-      ]);
+      await refetch();
     } finally {
       setRefreshing(false);
     }
@@ -109,7 +97,7 @@ export default function ProfileScreen() {
     // TODO: Navigate to detailed stat views
   };
 
-  if (userLoading || !user) {
+  if (isLoading || !user) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <LoadingSpinner />
@@ -117,19 +105,19 @@ export default function ProfileScreen() {
     );
   }
 
-  if (userError) {
+  if (error) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <ErrorView
           variant="network"
-          onRetry={() => refetchUser()}
+          onRetry={() => refetch()}
           message="Failed to load profile."
         />
       </View>
     );
   }
 
-  const renderPost = ({ item }: { item: typeof posts[0] }) => {
+  const renderPost = ({ item }: { item: any }) => {
     if (!item || !item.user) {
       return null;
     }
@@ -168,23 +156,14 @@ export default function ProfileScreen() {
       case 'posts':
         return (
           <View>
-            {postsLoading ? (
-              <View style={styles.loadingContainer}>
-                <LoadingSpinner />
-              </View>
-            ) : posts.length > 0 ? (
+            {posts.length > 0 ? (
               <View>
-                {posts.map((post) => {
+                {posts.map((post: any) => {
                   if (!post?.id) return null;
                   return (
                     <View key={post.id}>{renderPost({ item: post })}</View>
                   );
                 })}
-                {isFetchingNextPage && (
-                  <View style={styles.loadingMore}>
-                    <Text style={{ color: colors.textSecondary }}>Loading more...</Text>
-                  </View>
-                )}
               </View>
             ) : (
               <View style={styles.emptyCard}>
@@ -410,7 +389,7 @@ export default function ProfileScreen() {
         )}
 
         {/* Stats Grid */}
-        {stats && !statsLoading && (
+        {stats && (
           <ProfileStatsGrid stats={stats} onStatPress={handleStatPress} />
         )}
 
@@ -492,7 +471,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   headerTitle: {
-    fontSize: Typography.size.body1,
+    fontSize: Typography.size.body,
     fontWeight: Typography.weight.bold,
     flex: 1,
     marginHorizontal: Spacing.sm,

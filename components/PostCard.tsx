@@ -13,15 +13,9 @@ import { Image, Pressable, Share, StyleSheet, Text, View, Animated, LayoutAnimat
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
-import ReanimatedAnimated, { FadeIn } from 'react-native-reanimated';
-
-import { GlassCard } from './GlassCard';
 import { VCoinGainChip } from './VCoinGainChip';
 import { ComingSoonModal } from './ComingSoonModal';
 import { PostActionSheet } from './PostActionSheet';
-
-// Create animated GlassCard component
-const AnimatedGlassCard = ReanimatedAnimated.createAnimatedComponent(GlassCard);
 
 interface PostCardProps {
   id: string;
@@ -36,10 +30,15 @@ interface PostCardProps {
     aspectRatio?: number;
   };
   timestamp: number;
+  relativeTime?: string; // Precomputed from backend
   initialLikes?: number;
+  initialLikesFormatted?: string; // Precomputed from backend
   initialShares?: number;
+  initialSharesFormatted?: string; // Precomputed from backend
   initialReposts?: number;
+  initialRepostsFormatted?: string; // Precomputed from backend
   initialComments?: number;
+  initialCommentsFormatted?: string; // Precomputed from backend
   isLiked?: boolean;
   isShared?: boolean;
   isReposted?: boolean;
@@ -51,26 +50,37 @@ export function PostCard({
   content,
   media,
   timestamp,
+  relativeTime: providedRelativeTime,
   initialLikes = 0,
+  initialLikesFormatted,
   initialShares = 0,
+  initialSharesFormatted,
   initialReposts = 0,
+  initialRepostsFormatted,
   initialComments = 0,
+  initialCommentsFormatted,
   isLiked = false,
   isShared = false,
   isReposted = false,
 }: PostCardProps) {
   const { colors } = useTheme();
   const { earnVCoin } = useVCoin();
-  const relativeTime = useAutoUpdateTime(timestamp);
+  // Use backend's precomputed time if available, fallback to client-side for old posts
+  const clientRelativeTime = useAutoUpdateTime(timestamp);
+  const relativeTime = providedRelativeTime || clientRelativeTime;
   const { like, unlike, share, repost, isLiking, isSharing, isReposting } = usePostActions(id);
 
   const [liked, setLiked] = useState(isLiked);
   const [shared, setShared] = useState(isShared);
   const [reposted, setReposted] = useState(isReposted);
   const [likes, setLikes] = useState(initialLikes);
+  const [likesFormatted, setLikesFormatted] = useState(initialLikesFormatted || formatNumber(initialLikes));
   const [shares, setShares] = useState(initialShares);
+  const [sharesFormatted, setSharesFormatted] = useState(initialSharesFormatted || formatNumber(initialShares));
   const [reposts, setReposts] = useState(initialReposts);
+  const [repostsFormatted, setRepostsFormatted] = useState(initialRepostsFormatted || formatNumber(initialReposts));
   const [comments] = useState(initialComments);
+  const [commentsFormatted] = useState(initialCommentsFormatted || formatNumber(initialComments));
 
   // Animated colors for smooth transitions
   const likeScale = useRef(new Animated.Value(1)).current;
@@ -130,16 +140,22 @@ export function PostCard({
     try {
       if (!wasLiked) {
         setLiked(true);
-        setLikes(likes + 1);
+        const newLikes = likes + 1;
+        setLikes(newLikes);
+        setLikesFormatted(formatNumber(newLikes));
         
-        await like();
+        const response = await like();
         
-        // Earn VCoin for liking
-        const amount = await earnVCoin('like', id);
-        showEarnChip(amount, 'like');
+        // Earn VCoin - use amount from backend response
+        if (response?.vcoinEarned) {
+          earnVCoin(response.vcoinEarned, 'like', id);
+          showEarnChip(response.vcoinEarned, 'like');
+        }
       } else {
         setLiked(false);
-        setLikes(likes - 1);
+        const newLikes = likes - 1;
+        setLikes(newLikes);
+        setLikesFormatted(formatNumber(newLikes));
         
         await unlike();
       }
@@ -147,6 +163,7 @@ export function PostCard({
       // Revert on error
       setLiked(wasLiked);
       setLikes(previousLikes);
+      setLikesFormatted(formatNumber(previousLikes));
       console.error('Failed to like/unlike post:', error);
       Alert.alert('Error', 'Failed to update like. Please try again.');
     }
@@ -170,16 +187,22 @@ export function PostCard({
         
         try {
           setShared(true);
-          setShares(shares + 1);
+          const newShares = shares + 1;
+          setShares(newShares);
+          setSharesFormatted(formatNumber(newShares));
           
-          await share();
+          const response = await share();
           
-          const amount = await earnVCoin('share', id);
-          showEarnChip(amount, 'share');
+          // Earn VCoin - use amount from backend response
+          if (response?.vcoinEarned) {
+            earnVCoin(response.vcoinEarned, 'share', id);
+            showEarnChip(response.vcoinEarned, 'share');
+          }
         } catch (error) {
           // Revert on error
           setShared(false);
           setShares(previousShares);
+          setSharesFormatted(formatNumber(previousShares));
           console.error('Failed to record share:', error);
         }
       }
@@ -226,16 +249,22 @@ export function PostCard({
     
     try {
       setReposted(true);
-      setReposts(reposts + 1);
+      const newReposts = reposts + 1;
+      setReposts(newReposts);
+      setRepostsFormatted(formatNumber(newReposts));
       
-      await repost();
+      const response = await repost();
       
-      const amount = await earnVCoin('repost', id);
-      showEarnChip(amount, 'repost');
+      // Earn VCoin - use amount from backend response
+      if (response?.vcoinEarned) {
+        earnVCoin(response.vcoinEarned, 'repost', id);
+        showEarnChip(response.vcoinEarned, 'repost');
+      }
     } catch (error) {
       // Revert on error
       setReposted(false);
       setReposts(previousReposts);
+      setRepostsFormatted(formatNumber(previousReposts));
       console.error('Failed to repost:', error);
       Alert.alert('Error', 'Failed to repost. Please try again.');
     }
@@ -251,10 +280,17 @@ export function PostCard({
   };
 
   return (
-    <AnimatedGlassCard 
-      padding="md" 
-      style={styles.card}
-      entering={FadeIn.duration(300).delay(100)}
+    <View 
+      style={[
+        styles.card, 
+        {
+          backgroundColor: colors.card,
+          borderRadius: Radius.xl,
+          borderWidth: 1,
+          borderColor: colors.border,
+          padding: Spacing.md,
+        }
+      ]}
     >
       {/* Header */}
       <View style={styles.header}>
@@ -421,7 +457,7 @@ export function PostCard({
               ]}
               selectable={false}
             >
-              {likes > 0 ? formatNumber(likes) : '0'}
+              {likes > 0 ? likesFormatted : '0'}
             </Text>
           </Pressable>
         </Animated.View>
@@ -453,7 +489,7 @@ export function PostCard({
             ]}
             selectable={false}
           >
-            {comments > 0 ? formatNumber(comments) : '0'}
+            {comments > 0 ? commentsFormatted : '0'}
           </Text>
         </Pressable>
 
@@ -481,7 +517,7 @@ export function PostCard({
             ]}
             selectable={false}
           >
-            {reposts > 0 ? formatNumber(reposts) : '0'}
+            {reposts > 0 ? repostsFormatted : '0'}
           </Text>
         </Pressable>
 
@@ -509,7 +545,7 @@ export function PostCard({
             ]}
             selectable={false}
           >
-            {shares > 0 ? formatNumber(shares) : '0'}
+            {shares > 0 ? sharesFormatted : '0'}
           </Text>
         </Pressable>
       </View>
@@ -550,7 +586,7 @@ export function PostCard({
         onReport={handleReport}
         onShare={handleShare}
       />
-    </AnimatedGlassCard>
+    </View>
   );
 }
 

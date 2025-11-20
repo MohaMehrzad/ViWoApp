@@ -6,6 +6,8 @@
  * Format relative time from timestamp
  * @param timestamp - Unix timestamp in milliseconds
  * @returns Formatted relative time string (e.g., "5m", "2h", "3d")
+ * @deprecated Backend now provides precomputed relativeTime in API responses. 
+ * This is kept for backward compatibility with older components.
  */
 export function getRelativeTime(timestamp: number): string {
   const diff = Date.now() - timestamp;
@@ -27,6 +29,8 @@ export function getRelativeTime(timestamp: number): string {
  * Format large numbers with K/M suffixes
  * @param num - Number to format
  * @returns Formatted string (e.g., "1.2K", "3.4M")
+ * @deprecated Backend now provides precomputed formatted counts in API responses.
+ * This is kept for backward compatibility and client-side formatting needs.
  */
 export function formatNumber(num: number): string {
   if (num >= 1000000) {
