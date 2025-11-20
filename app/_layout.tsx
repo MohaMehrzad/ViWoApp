@@ -15,6 +15,7 @@ import { SocketProvider } from '@/contexts/SocketContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { NetworkIndicator } from '@/components/NetworkIndicator';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { Colors } from '@/constants/theme';
 
 // Create a React Query client
 const queryClient = new QueryClient({
@@ -37,6 +38,33 @@ export const unstable_settings = {
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
+
+// Custom navigation themes that match our design system
+const CustomDarkTheme = {
+  ...DarkTheme,
+  colors: {
+    ...DarkTheme.colors,
+    background: Colors.dark.background,
+    card: Colors.dark.surface1,
+    text: Colors.dark.textPrimary,
+    border: Colors.dark.border,
+    notification: Colors.dark.primary,
+    primary: Colors.dark.primary,
+  },
+};
+
+const CustomLightTheme = {
+  ...DefaultTheme,
+  colors: {
+    ...DefaultTheme.colors,
+    background: Colors.light.background,
+    card: Colors.light.surface1,
+    text: Colors.light.textPrimary,
+    border: Colors.light.border,
+    notification: Colors.light.primary,
+    primary: Colors.light.primary,
+  },
+};
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
@@ -80,7 +108,7 @@ function ThemedNavigationContainer() {
   const colorScheme = useColorScheme();
 
   return (
-    <NavigationThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <NavigationThemeProvider value={colorScheme === 'dark' ? CustomDarkTheme : CustomLightTheme}>
       <AuthProvider>
         <SocketProvider>
           <VCoinProvider>

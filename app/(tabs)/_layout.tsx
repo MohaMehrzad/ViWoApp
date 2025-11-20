@@ -60,7 +60,7 @@ export default function TabLayout() {
   return (
     <Tabs
       tabBar={(props) => <CustomTabBar {...props} />}
-      sceneContainerStyle={{ backgroundColor: 'transparent' }}
+      sceneContainerStyle={{ backgroundColor: colors.background }}
       screenOptions={{
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.textSecondary,

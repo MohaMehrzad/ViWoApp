@@ -178,6 +178,12 @@ export default function VCoinHistoryScreen() {
         renderItem={renderTransaction}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
+        // Performance optimizations
+        removeClippedSubviews={true}
+        maxToRenderPerBatch={8}
+        initialNumToRender={8}
+        windowSize={5}
+        updateCellsBatchingPeriod={50}
         onEndReached={handleLoadMore}
         onEndReachedThreshold={0.5}
         refreshControl={

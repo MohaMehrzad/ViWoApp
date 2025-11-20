@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
   coverPhoto: {
     width: '100%',
     height: 120,
-    backgroundColor: '#333',
+    backgroundColor: '#2E2E2E',
   },
   coverPhotoImage: {
     resizeMode: 'cover',

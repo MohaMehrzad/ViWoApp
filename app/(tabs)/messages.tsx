@@ -179,6 +179,12 @@ export default function MessagesScreen() {
           },
         ]}
         style={{ backgroundColor: colors.background }}
+        // Performance optimizations
+        removeClippedSubviews={true}
+        maxToRenderPerBatch={5}
+        initialNumToRender={5}
+        windowSize={5}
+        updateCellsBatchingPeriod={50}
         refreshControl={
           <RefreshControl
             refreshing={isRefetching}

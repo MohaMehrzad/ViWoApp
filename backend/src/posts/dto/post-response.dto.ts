@@ -4,6 +4,7 @@ export class PostResponseDto {
   mediaType: string | null;
   mediaUrl: string | null;
   mediaThumbnail: string | null;
+  aspectRatio: number | null;
   likesCount: number;
   sharesCount: number;
   repostsCount: number;

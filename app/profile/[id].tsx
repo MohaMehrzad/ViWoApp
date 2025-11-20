@@ -238,15 +238,17 @@ export default function ProfileScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Glassy Transparent Header */}
+      {/* Glass Blur Header - Same as Feed Header */}
       <View
         style={[
           styles.header,
           {
             paddingTop: insets.top,
+            backgroundColor: 'transparent',
           },
         ]}
       >
+        {/* Background - Pure glass blur like iOS Control Center */}
         <View style={StyleSheet.absoluteFill}>
           <BlurView
             blurType={blurType}
@@ -254,14 +256,17 @@ export default function ProfileScreen() {
             reducedTransparencyFallbackColor="transparent"
             style={StyleSheet.absoluteFill}
           />
+          
+          {/* Bottom border */}
           <View
             style={[
-              styles.headerBorder,
+              styles.bottomBorder,
               { backgroundColor: hairlineBorder },
             ]}
           />
         </View>
 
+        {/* Content */}
         <View style={styles.headerContent}>
           <Pressable
             onPress={() => router.back()}
@@ -271,7 +276,7 @@ export default function ProfileScreen() {
                 backgroundColor: glassFill(LiquidGlass.fillIntensity.subtle),
                 borderWidth: StyleSheet.hairlineWidth,
                 borderColor: hairlineBorder,
-                opacity: pressed ? 0.6 : 1,
+                opacity: pressed ? 0.8 : 1,
               },
             ]}
           >
@@ -292,7 +297,7 @@ export default function ProfileScreen() {
                     backgroundColor: glassFill(LiquidGlass.fillIntensity.subtle),
                     borderWidth: StyleSheet.hairlineWidth,
                     borderColor: hairlineBorder,
-                    opacity: pressed ? 0.6 : 1,
+                    opacity: pressed ? 0.8 : 1,
                   },
                 ]}
               >
@@ -309,7 +314,7 @@ export default function ProfileScreen() {
                       backgroundColor: glassFill(LiquidGlass.fillIntensity.subtle),
                       borderWidth: StyleSheet.hairlineWidth,
                       borderColor: hairlineBorder,
-                      opacity: pressed ? 0.6 : 1,
+                      opacity: pressed ? 0.8 : 1,
                     },
                   ]}
                 >
@@ -323,7 +328,7 @@ export default function ProfileScreen() {
                       backgroundColor: glassFill(LiquidGlass.fillIntensity.subtle),
                       borderWidth: StyleSheet.hairlineWidth,
                       borderColor: hairlineBorder,
-                      opacity: pressed ? 0.6 : 1,
+                      opacity: pressed ? 0.8 : 1,
                     },
                   ]}
                 >
@@ -462,9 +467,9 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     zIndex: 10,
-    backgroundColor: 'transparent',
+    overflow: 'hidden',
   },
-  headerBorder: {
+  bottomBorder: {
     position: 'absolute',
     bottom: 0,
     left: 0,

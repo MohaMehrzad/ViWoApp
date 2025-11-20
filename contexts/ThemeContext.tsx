@@ -18,7 +18,6 @@ const THEME_STORAGE_KEY = '@viwo_theme_preference';
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const systemColorScheme = useRNColorScheme();
   const [themeMode, setThemeModeState] = useState<ThemeMode>('system');
-  const [isLoading, setIsLoading] = useState(true);
 
   // Calculate actual theme based on mode and system preference
   const actualTheme: 'light' | 'dark' = 
@@ -26,7 +25,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       ? (systemColorScheme || 'dark') 
       : themeMode;
 
-  // Load saved theme preference on mount
+  // Load saved theme preference on mount - non-blocking
   useEffect(() => {
     loadThemePreference();
   }, []);
@@ -49,8 +48,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       }
     } catch (error) {
       console.error('Failed to load theme preference:', error);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -68,11 +65,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     await setThemeMode(newMode);
   };
 
-  // Don't render children until theme is loaded
-  if (isLoading) {
-    return null;
-  }
-
+  // Render immediately with default theme - hydrate asynchronously
   return (
     <ThemeContext.Provider
       value={{

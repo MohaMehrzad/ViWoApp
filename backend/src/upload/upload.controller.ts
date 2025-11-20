@@ -22,11 +22,12 @@ export class UploadController {
       throw new BadRequestException('No file uploaded');
     }
 
-    const url = await this.uploadService.processImageUpload(file);
+    const result = await this.uploadService.processImageUpload(file);
 
     return {
       success: true,
-      url,
+      url: result.url,
+      aspectRatio: result.aspectRatio,
       filename: file.filename,
       size: file.size,
     };

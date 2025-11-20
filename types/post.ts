@@ -3,6 +3,7 @@ export interface Post {
   content: string;
   mediaUrl?: string;
   mediaType?: 'image' | 'video';
+  aspectRatio?: number;
   userId: string;
   user: {
     id: string;
@@ -25,6 +26,7 @@ export interface CreatePostDto {
   content: string;
   mediaUrl?: string;
   mediaType?: 'image' | 'video';
+  aspectRatio?: number;
 }
 
 export interface UpdatePostDto {

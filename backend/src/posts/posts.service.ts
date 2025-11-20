@@ -17,6 +17,7 @@ export class PostsService {
         mediaType: createPostDto.mediaType || null,
         mediaUrl: createPostDto.mediaUrl || null,
         mediaThumbnail: createPostDto.mediaThumbnail || null,
+        aspectRatio: createPostDto.aspectRatio || null,
       },
       include: {
         user: {

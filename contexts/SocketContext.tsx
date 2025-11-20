@@ -18,15 +18,22 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   const { isAuthenticated } = useAuth();
 
   useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+    
     if (isAuthenticated) {
-      // Auto-connect when user is authenticated
-      connectSocket();
+      // Delay socket connection by 3 seconds to avoid blocking startup
+      timeoutId = setTimeout(() => {
+        connectSocket();
+      }, 3000);
     } else {
       // Disconnect when user logs out
       disconnectSocket();
     }
 
     return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
       disconnectSocket();
     };
   }, [isAuthenticated]);

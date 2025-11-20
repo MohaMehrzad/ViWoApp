@@ -60,6 +60,7 @@ model Post {
   mediaType           String?   @map("media_type") @db.VarChar(20) // 'image', 'video', null
   mediaUrl            String?   @map("media_url")
   mediaThumbnail      String?   @map("media_thumbnail")
+  aspectRatio         Float?    @map("aspect_ratio") // width/height ratio for images/videos
   likesCount          Int       @default(0) @map("likes_count")
   sharesCount         Int       @default(0) @map("shares_count")
   repostsCount        Int       @default(0) @map("reposts_count")

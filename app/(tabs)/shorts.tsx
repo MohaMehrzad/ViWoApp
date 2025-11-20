@@ -115,6 +115,12 @@ export default function ShortsScreen() {
         showsVerticalScrollIndicator={false}
         decelerationRate="fast"
         getItemLayout={getItemLayout}
+        // Performance optimizations
+        removeClippedSubviews={true}
+        maxToRenderPerBatch={3}
+        initialNumToRender={2}
+        windowSize={3}
+        updateCellsBatchingPeriod={50}
         onViewableItemsChanged={onViewableItemsChanged}
         viewabilityConfig={{
           itemVisiblePercentThreshold: 50,

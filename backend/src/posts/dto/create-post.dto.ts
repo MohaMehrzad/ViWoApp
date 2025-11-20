@@ -1,4 +1,4 @@
-import { IsString, IsOptional, MaxLength, IsIn } from 'class-validator';
+import { IsString, IsOptional, MaxLength, IsIn, IsNumber, Min, Max } from 'class-validator';
 
 export class CreatePostDto {
   @IsString()
@@ -17,5 +17,11 @@ export class CreatePostDto {
   @IsOptional()
   @IsString()
   mediaThumbnail?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0.1)
+  @Max(10)
+  aspectRatio?: number;
 }
 

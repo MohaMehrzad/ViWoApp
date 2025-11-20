@@ -185,6 +185,12 @@ export default function LeaderboardScreen() {
         renderItem={renderEntry}
         keyExtractor={(item) => item.userId}
         contentContainerStyle={styles.list}
+        // Performance optimizations
+        removeClippedSubviews={true}
+        maxToRenderPerBatch={10}
+        initialNumToRender={10}
+        windowSize={5}
+        updateCellsBatchingPeriod={50}
         refreshControl={
           <RefreshControl
             refreshing={isRefetching}

@@ -86,7 +86,7 @@ export default function FeedScreen() {
             ? {
                 type: item.mediaType || 'image',
                 uri: item.mediaUrl,
-                // aspectRatio will be detected automatically by PostCard
+                aspectRatio: item.aspectRatio,
               }
             : undefined
         }
@@ -245,6 +245,12 @@ export default function FeedScreen() {
         style={{ backgroundColor: 'transparent' }}
         onScroll={handleScroll}
         scrollEventThrottle={16}
+        // Performance optimizations
+        removeClippedSubviews={true}
+        maxToRenderPerBatch={5}
+        initialNumToRender={5}
+        windowSize={5}
+        updateCellsBatchingPeriod={50}
         refreshControl={
           <RefreshControl
             refreshing={isRefetching}

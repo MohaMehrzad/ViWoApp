@@ -35,18 +35,18 @@ export const BrandColors = {
     900: '#155E75',
   },
   
-  // Accent (VCoin) - Dark Navy Blue (Chrome Black Navy)
-  navy: {
-    50: '#F8FAFC',
-    100: '#E2E8F0',
-    200: '#CBD5E1',
-    300: '#94A3B8',
-    400: '#64748B',
-    500: '#1E40AF', // Primary dark mode - visible on dark backgrounds
-    600: '#0F172A', // Primary light mode - very dark, almost black
-    700: '#0A1628',
-    800: '#070F1C',
-    900: '#050B14',
+  // Accent (VCoin) - Gray Scale
+  gray: {
+    50: '#F9FAFB',
+    100: '#F3F4F6',
+    200: '#E5E7EB',
+    300: '#D1D5DB', // Primary dark mode - visible on dark backgrounds
+    400: '#9CA3AF',
+    500: '#6B7280',
+    600: '#4B5563',
+    700: '#374151', // Primary light mode - dark gray
+    800: '#1F2937',
+    900: '#111827',
   },
 };
 
@@ -68,17 +68,17 @@ export const Colors = {
     secondaryLight: '#26C6DA',
     secondaryDark: '#00838F',
     
-    // Accent Color (Dark Navy Blue - VCoin ONLY)
-    accent: '#0F172A',
-    accentHover: '#1E293B',
-    accentLight: '#334155',
-    accentDark: '#0A1628',
+    // Accent Color (Gray - VCoin ONLY)
+    accent: '#374151',
+    accentHover: '#4B5563',
+    accentLight: '#6B7280',
+    accentDark: '#1F2937',
     
     // Create/Action Color (Bright Lime - FAB & Creation Buttons)
     create: '#C6FF3D',
     createHover: '#D4FF61',
     createDark: '#B8F029',
-    createContrast: '#0A1E3F', // Dark color for text/icons on bright create background
+    createContrast: '#1F2937', // Dark color for text/icons on bright create background
     
     // Surface Hierarchy
     surface1: '#FFFFFF', // Elevated cards
@@ -139,7 +139,7 @@ export const Colors = {
   },
   dark: {
     // Base background
-    background: '#0A1E3F',
+    background: '#1B1B1B',
     
     // Primary Brand Color (Purple)
     primary: '#A855F7',
@@ -153,33 +153,33 @@ export const Colors = {
     secondaryLight: '#67E8F9',
     secondaryDark: '#0891B2',
     
-    // Accent Color (Dark Navy Blue - VCoin ONLY)
-    accent: '#1E40AF',
-    accentHover: '#2563EB',
-    accentLight: '#3B82F6',
-    accentDark: '#1E3A8A',
+    // Accent Color (Gray - VCoin ONLY)
+    accent: '#D1D5DB',
+    accentHover: '#E5E7EB',
+    accentLight: '#F3F4F6',
+    accentDark: '#9CA3AF',
     
     // Create/Action Color (Bright Lime - FAB & Creation Buttons)
     create: '#C6FF3D',
     createHover: '#D4FF61',
     createDark: '#B8F029',
-    createContrast: '#0A1E3F', // Dark color for text/icons on bright create background
+    createContrast: '#1B1B1B', // Dark color for text/icons on bright create background
     
     // Surface Hierarchy
-    surface1: '#0F2749', // Elevated cards
-    surface2: '#143152', // Modal backgrounds
-    surface3: '#1A3A5C', // Highest elevation
+    surface1: '#252525', // Elevated cards
+    surface2: '#2E2E2E', // Modal backgrounds
+    surface3: '#383838', // Highest elevation
     
     // Overlays
-    backdrop: 'rgba(10, 30, 63, 0.85)',
+    backdrop: 'rgba(27, 27, 27, 0.85)',
     modalScrim: 'rgba(0, 0, 0, 0.60)',
     
     // Text Hierarchy
-    textPrimary: '#E6EEF8',
-    textSecondary: '#A8B8CC',
-    textTertiary: '#6B7C93',
-    textDisabled: 'rgba(230, 238, 248, 0.38)',
-    placeholder: 'rgba(168, 184, 204, 0.90)',
+    textPrimary: '#F3F4F6',
+    textSecondary: '#D1D5DB',
+    textTertiary: '#9CA3AF',
+    textDisabled: 'rgba(243, 244, 246, 0.38)',
+    placeholder: 'rgba(209, 213, 219, 0.90)',
     
     // Semantic Colors
     success: '#49E79A',
@@ -210,11 +210,11 @@ export const Colors = {
     // Glass Effects
     glassFill: 'rgba(255, 255, 255, 0.06)',
     glassBorder: 'rgba(255, 255, 255, 0.15)',
-    appleGlassFill: 'rgba(10, 30, 63, 0.72)',
-    androidTranslucentBg: 'rgba(10, 30, 63, 0.85)',
+    appleGlassFill: 'rgba(27, 27, 27, 0.72)',
+    androidTranslucentBg: 'rgba(37, 37, 37, 0.85)',
     hairlineBorder: 'rgba(255, 255, 255, 0.15)',
     border: 'rgba(255, 255, 255, 0.15)',
-    cardFallback: '#0F2749',
+    cardFallback: '#252525',
     
     // Link States
     link: '#A855F7',
@@ -667,9 +667,17 @@ export const getShadow = (elevation: number = 6) => {
 
 // Glass fill with optional alpha adjustment
 export const getGlassFill = (isDark: boolean, alphaAdjust: number = 0) => {
-  const baseAlpha = isDark ? 0.06 : 0.40;
-  const adjustedAlpha = Math.max(0, Math.min(1, baseAlpha + alphaAdjust));
-  return `rgba(255, 255, 255, ${adjustedAlpha})`;
+  if (isDark) {
+    // Dark mode: use very subtle white overlay (barely visible, just adds slight depth)
+    const baseAlpha = 0.04;
+    const adjustedAlpha = Math.max(0, Math.min(1, baseAlpha + alphaAdjust));
+    return `rgba(255, 255, 255, ${adjustedAlpha})`;
+  } else {
+    // Light mode: use white with opacity
+    const baseAlpha = 0.40;
+    const adjustedAlpha = Math.max(0, Math.min(1, baseAlpha + alphaAdjust));
+    return `rgba(255, 255, 255, ${adjustedAlpha})`;
+  }
 };
 
 // Hairline border color

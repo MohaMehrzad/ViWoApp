@@ -87,7 +87,6 @@ export function PostCard({
   // Image loading state
   const [imageLoading, setImageLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
-  const [detectedAspectRatio, setDetectedAspectRatio] = useState<number | undefined>(media?.aspectRatio);
   
   // Text truncation state
   const [expanded, setExpanded] = useState(false);
@@ -98,29 +97,9 @@ export function PostCard({
   const commentsEnabled = false; // To be implemented
   const isOwnPost = false; // In production: author.id === currentUser.id
   
-  // Detect aspect ratio from image dimensions if not provided
-  useEffect(() => {
-    if (media && media.type === 'image' && !media.aspectRatio && media.uri) {
-      Image.getSize(
-        media.uri,
-        (width, height) => {
-          if (width && height) {
-            const ratio = width / height;
-            setDetectedAspectRatio(ratio);
-          }
-        },
-        (error) => {
-          console.log('Failed to get image size:', error);
-          // Use default if detection fails
-          setDetectedAspectRatio(16 / 9);
-        }
-      );
-    }
-  }, [media?.uri]);
-  
   // Enforce aspect ratio constraints
   const getConstrainedAspectRatio = (ratio?: number) => {
-    if (!ratio) return 16 / 9;
+    if (!ratio) return 16 / 9; // Default fallback for legacy posts
     // Clamp to reasonable range (0.5 to 2.0)
     return Math.max(0.5, Math.min(ratio, 2.0));
   };
@@ -386,7 +365,7 @@ export function PostCard({
             style={[
               styles.media,
               {
-                aspectRatio: getConstrainedAspectRatio(detectedAspectRatio || media.aspectRatio),
+                aspectRatio: getConstrainedAspectRatio(media.aspectRatio),
               },
             ]}
             resizeMode="cover"
