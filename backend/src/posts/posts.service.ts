@@ -185,7 +185,7 @@ export class PostsService {
           isLiked: types.has('like'),
           isShared: types.has('share'),
           isReposted: types.has('repost'),
-        };
+        } as any;
       });
     }
 
@@ -278,7 +278,7 @@ export class PostsService {
           isLiked: types.has('like'),
           isShared: types.has('share'),
           isReposted: types.has('repost'),
-        };
+        } as any;
       });
     }
 
